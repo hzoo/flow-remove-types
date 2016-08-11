@@ -1,5 +1,8 @@
 /* @flow */
 
+// multi-byte char
+var 大: string = 'big';
+
 // Regular import
 import { Something } from 'some-module';
 

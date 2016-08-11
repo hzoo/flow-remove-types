@@ -40,27 +40,65 @@ module.exports = function flowRemoveTypes(source, options) {
     return source;
   }
 
-  var result = '';
-  var lastPos = 0;
+//   var result = '';
+//   var lastPos = 0;
 
-  // Step through the removed nodes, building up the resulting string.
+//   // Step through the removed nodes, building up the resulting string.
+//   for (var i = 0; i < removedNodes.length; i++) {
+//     var node = removedNodes[i];
+//     result += source.slice(lastPos, node.start);
+//     var toReplace = source.slice(node.start, node.end);
+//     lastPos = node.end;
+//     if (!node.loc || node.loc.start.line === node.loc.end.line) {
+//       result += space(toReplace.length);
+//     } else {
+//       var toReplaceLines = toReplace.split(LINE_RX);
+//       result += space(toReplaceLines[0].length);
+//       for (var j = 1; j < toReplaceLines.length; j += 2) {
+//         result += toReplaceLines[j] + space(toReplaceLines[j + 1].length);
+//       }
+//     }
+//   }
+
+//   return result += source.slice(lastPos);
+// }
+
+  var arrBuf = str2ab(source);
+  var bufView = new Uint16Array(arrBuf);
   for (var i = 0; i < removedNodes.length; i++) {
     var node = removedNodes[i];
-    result += source.slice(lastPos, node.start);
     var toReplace = source.slice(node.start, node.end);
-    lastPos = node.end;
     if (!node.loc || node.loc.start.line === node.loc.end.line) {
-      result += space(toReplace.length);
+      bufView.fill(32, node.start, node.end);
     } else {
       var toReplaceLines = toReplace.split(LINE_RX);
-      result += space(toReplaceLines[0].length);
+      var lastPos = node.start + toReplaceLines[0].length;
+      bufView.fill(32, node.start, lastPos);
+      lastPos += 1;
+
       for (var j = 1; j < toReplaceLines.length; j += 2) {
-        result += toReplaceLines[j] + space(toReplaceLines[j + 1].length);
+        bufView[lastPos] = 10;
+        lastPos += 1;
+        bufView.fill(32, lastPos, lastPos + toReplaceLines[j + 1].length);
+        lastPos += toReplaceLines[j + 1].length;
       }
     }
   }
 
-  return result += source.slice(lastPos);
+  return ab2str(arrBuf);
+}
+
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint16Array(buf));
+}
+
+function str2ab(str) {
+  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+  var bufView = new Uint16Array(buf);
+  for (var i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
 }
 
 var LINE_RX = /(\r\n?|\n|\u2028|\u2029)/;

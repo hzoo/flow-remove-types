@@ -1,5 +1,8 @@
 /*       */
 
+// multi-byte char
+var 大         = 'big';
+
 // Regular import
 import { Something } from 'some-module';
 
